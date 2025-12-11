@@ -104,6 +104,12 @@ const GeomanControl = ({ onPolygonChange }) => {
     const map = useMap();
 
     useEffect(() => {
+        // Guard: Ensure Geoman plugin is loaded
+        if (!map.pm) {
+            console.warn("Geoman plugin not yet loaded on map instance");
+            return;
+        }
+
         // Initialize Geoman Controls
         map.pm.addControls({
             position: 'topright',
@@ -120,8 +126,17 @@ const GeomanControl = ({ onPolygonChange }) => {
             removalMode: true,
         });
 
+        // Global Options for robustness
+        map.pm.setGlobalOptions({
+            allowSelfIntersection: false,
+            snapDistance: 20,
+            continueDrawing: false, // Prevent multi-polygon drawing in one go
+            editable: true,
+        });
+
         // Handler for Creation
         map.on('pm:create', (e) => {
+            console.log("Polygon Created:", e);
             const layer = e.layer;
 
             // Allow only one polygon: Remove others
@@ -149,9 +164,11 @@ const GeomanControl = ({ onPolygonChange }) => {
         });
 
         return () => {
-            map.pm.removeControls();
-            map.off('pm:create');
-            map.off('pm:remove');
+            if (map.pm) {
+                map.pm.removeControls();
+                map.off('pm:create');
+                map.off('pm:remove');
+            }
         };
     }, [map, onPolygonChange]);
 

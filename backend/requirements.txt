@@ -7,3 +7,4 @@ uvicorn
 whitenoise
 black
 flake8
+django-filter
