@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: haus_db
+    environment:
+      POSTGRES_DB: haus
+      POSTGRES_USER: haus_user
+      POSTGRES_PASSWORD: haus_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U haus_user -d haus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: haus_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgis://haus_user:haus_password@db:5432/haus
+      DEBUG: "True"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: haus_frontend
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    stdin_open: true
+    tty: true
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: haus_scraper
+    volumes:
+      - ./scraper:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgis://haus_user:haus_password@db:5432/haus
+
+volumes:
+  postgres_data:
