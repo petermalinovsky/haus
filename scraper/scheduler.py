@@ -13,14 +13,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-LOCATION = os.getenv("SCRAPE_LOCATION", "Boston, MA")
+# Parse locations from environment
+locations_str = os.getenv("SCRAPE_LOCATIONS")
+if locations_str:
+    LOCATIONS = [loc.strip() for loc in locations_str.split(";") if loc.strip()]
+else:
+    # Fall back to single SCRAPE_LOCATION for backward compatibility
+    single_location = os.getenv("SCRAPE_LOCATION", "Boston, MA")
+    LOCATIONS = [single_location]
+
 
 def job():
-    logger.info(f"Triggering daily scrape for {LOCATION}...")
+    logger.info(f"Triggering daily scrape for {len(LOCATIONS)} location(s): {', '.join(LOCATIONS)}...")
     try:
-        # Run main.py as a subprocess
+        # Run main.py as a subprocess with all locations
         result = subprocess.run(
-            ["python", "main.py", LOCATION], 
+            ["python", "main.py"] + LOCATIONS, 
             capture_output=True, 
             text=True
         )
@@ -34,6 +42,7 @@ def job():
             
     except Exception as e:
         logger.error(f"Failed to run scrape job: {e}")
+
 
 from sqlalchemy import create_engine, text
 
@@ -68,7 +77,7 @@ def is_database_empty():
         return False
 
 if __name__ == "__main__":
-    logger.info(f"Starting Scheduler. Target: {LOCATION}. Schedule: Daily at 02:00 AM.")
+    logger.info(f"Starting Scheduler. Targets: {', '.join(LOCATIONS)}. Schedule: Daily at 02:00 AM.")
     
     # Check emptiness and run if needed
     if is_database_empty():
@@ -83,3 +92,4 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(60)
+

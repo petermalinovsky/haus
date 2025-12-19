@@ -61,6 +61,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgis://haus_user:haus_password@db:5432/haus
+      # Semicolon-separated list of locations to scrape
+      # Example: "Boston, MA; Cambridge, MA; Somerville, MA"
+      SCRAPE_LOCATIONS: "Boston, MA; Cambridge, MA"
+
 
 volumes:
   postgres_data:

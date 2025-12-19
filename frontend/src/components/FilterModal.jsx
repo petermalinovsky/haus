@@ -60,6 +60,24 @@ const FilterModal = ({ isOpen, onClose, filters, onApply }) => {
                                 onChange={(e) => handleChange('price_max', e.target.value)}
                             />
                         </Stack>
+                        <Box sx={{ px: 1, mt: 2 }}>
+                            <Slider
+                                value={[
+                                    Number(localFilters.price_min) || 0,
+                                    Number(localFilters.price_max) || 5000000
+                                ]}
+                                onChange={(e, newValue) => {
+                                    handleChange('price_min', newValue[0].toString());
+                                    handleChange('price_max', newValue[1].toString());
+                                }}
+                                valueLabelDisplay="auto"
+                                valueLabelFormat={(value) => `$${value.toLocaleString()}`}
+                                min={0}
+                                max={5000000}
+                                step={50000}
+                                disableSwap
+                            />
+                        </Box>
                     </Box>
 
                     {/* Sqft Range */}
@@ -83,6 +101,24 @@ const FilterModal = ({ isOpen, onClose, filters, onApply }) => {
                                 onChange={(e) => handleChange('sqft_max', e.target.value)}
                             />
                         </Stack>
+                        <Box sx={{ px: 1, mt: 2 }}>
+                            <Slider
+                                value={[
+                                    Number(localFilters.sqft_min) || 0,
+                                    Number(localFilters.sqft_max) || 10000
+                                ]}
+                                onChange={(e, newValue) => {
+                                    handleChange('sqft_min', newValue[0].toString());
+                                    handleChange('sqft_max', newValue[1].toString());
+                                }}
+                                valueLabelDisplay="auto"
+                                valueLabelFormat={(value) => `${value.toLocaleString()} sqft`}
+                                min={0}
+                                max={10000}
+                                step={100}
+                                disableSwap
+                            />
+                        </Box>
                     </Box>
 
                     {/* Price Per Sqft */}
@@ -106,6 +142,24 @@ const FilterModal = ({ isOpen, onClose, filters, onApply }) => {
                                 onChange={(e) => handleChange('pps_max', e.target.value)}
                             />
                         </Stack>
+                        <Box sx={{ px: 1, mt: 2 }}>
+                            <Slider
+                                value={[
+                                    Number(localFilters.pps_min) || 0,
+                                    Number(localFilters.pps_max) || 1000
+                                ]}
+                                onChange={(e, newValue) => {
+                                    handleChange('pps_min', newValue[0].toString());
+                                    handleChange('pps_max', newValue[1].toString());
+                                }}
+                                valueLabelDisplay="auto"
+                                valueLabelFormat={(value) => `$${value}`}
+                                min={0}
+                                max={1000}
+                                step={10}
+                                disableSwap
+                            />
+                        </Box>
                     </Box>
 
                     {/* Beds / Baths */}

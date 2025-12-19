@@ -147,10 +147,43 @@ def run_scraper(location):
     except Exception as e:
         logger.error(f"Error during scrape execution: {e}", exc_info=True)
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        loc = sys.argv[1]
-    else:
-        loc = os.getenv("SCRAPE_LOCATION", "Boston, MA")
+def run_scraper_for_locations(locations):
+    """
+    Run the scraper for multiple locations.
     
-    run_scraper(loc)
+    Args:
+        locations: List of location strings to scrape
+    """
+    logger.info(f"Starting scraper for {len(locations)} location(s): {', '.join(locations)}")
+    
+    successful = 0
+    failed = 0
+    
+    for location in locations:
+        try:
+            run_scraper(location)
+            successful += 1
+        except Exception as e:
+            logger.error(f"Failed to scrape {location}: {e}", exc_info=True)
+            failed += 1
+            # Continue with next location
+    
+    logger.info(f"Scraping complete. Successful: {successful}, Failed: {failed}")
+
+if __name__ == "__main__":
+    locations = []
+    
+    # Check for command line arguments (space-separated locations)
+    if len(sys.argv) > 1:
+        locations = sys.argv[1:]
+    else:
+        # Check for SCRAPE_LOCATIONS (semicolon-separated)
+        locations_str = os.getenv("SCRAPE_LOCATIONS")
+        if locations_str:
+            locations = [loc.strip() for loc in locations_str.split(";") if loc.strip()]
+        else:
+            # Fall back to single SCRAPE_LOCATION for backward compatibility
+            single_location = os.getenv("SCRAPE_LOCATION", "Boston, MA")
+            locations = [single_location]
+    
+    run_scraper_for_locations(locations)
