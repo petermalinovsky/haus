@@ -73,7 +73,7 @@ class ListingsViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Return aggregated metrics for the current view (heatmap data).
         """
-        qs = self.get_queryset()
+        qs = self.filter_queryset(self.get_queryset())
         # For simple heatmap: return lat, lon, weight (e.g. price per sqft or price)
         # Limit to reasonable number
         data = qs.values('latitude', 'longitude', 'list_price', 'sqft')[:2000]
