@@ -35,6 +35,52 @@ The components represent a data pipeline that evolves from raw ingestion to subj
 3.  **Backend (Rankings)**: Layers subjective user preferences on top of facts.
 4.  **Frontend**: Visualizes the intersection of facts and preferences.
 
+## File Structure & Descriptions
+
+### Root Directory
+- [README.md](file:///home/peter/haus/README.md): Main project documentation and architectural overview.
+- [docker-compose.yml](file:///home/peter/haus/docker-compose.yml): Orchestrates the full stack (DB, Backend, Frontend, Scraper) using Docker.
+- [backend.md](file:///home/peter/haus/backend.md), [frontend.md](file:///home/peter/haus/frontend.md), [scraper.md](file:///home/peter/haus/scraper.md): Service-specific documentation with technical specs and API details.
+
+### Backend (`/backend`)
+- [Dockerfile](file:///home/peter/haus/backend/Dockerfile): Container definition for the Django application.
+- [requirements.txt](file:///home/peter/haus/backend/requirements.txt): Python dependencies (Django, DRF, psycopg2, etc.).
+- [manage.py](file:///home/peter/haus/backend/manage.py): Django's command-line utility for administrative tasks.
+- [haus_config/](file:///home/peter/haus/backend/haus_config/): Core project settings.
+    - [settings.py](file:///home/peter/haus/backend/haus_config/settings.py): Django configuration (database, apps, middleware).
+    - [urls.py](file:///home/peter/haus/backend/haus_config/urls.py): Root URL routing and API entry points.
+- [listings/](file:///home/peter/haus/backend/listings/): App managing property data and spatial queries.
+    - [models.py](file:///home/peter/haus/backend/listings/models.py): Defines the `MlsHistory` PostGIS-enabled schema.
+    - [views.py](file:///home/peter/haus/backend/listings/views.py): REST API logic for filtering and serving listing data.
+    - [serializers.py](file:///home/peter/haus/backend/listings/serializers.py): Converts model instances to JSON.
+    - [filters.py](file:///home/peter/haus/backend/listings/filters.py): Custom Django-filter logic for complex spatial/linear queries.
+- [rankings/](file:///home/peter/haus/backend/rankings/): App implementing the ELO-based preference learning engine.
+    - [models.py](file:///home/peter/haus/backend/rankings/models.py): Schema for `RankingScore` and `RankingComparison`.
+    - [views.py](file:///home/peter/haus/backend/rankings/views.py): API for pair generation and comparison result submission.
+
+### Frontend (`/frontend`)
+- [Dockerfile](file:///home/peter/haus/frontend/Dockerfile): Container definition for the React development environment.
+- [package.json](file:///home/peter/haus/frontend/package.json): Node.js dependencies and scripts (React, Vite, MUI, Leaflet).
+- [vite.config.js](file:///home/peter/haus/frontend/vite.config.js): Vite configuration for builds and development server.
+- [index.html](file:///home/peter/haus/frontend/index.html): Main entry-point HTML file.
+- [src/](file:///home/peter/haus/frontend/src/): React source code.
+    - [main.jsx](file:///home/peter/haus/frontend/src/main.jsx): Application entry point and DOM mounting.
+    - [App.jsx](file:///home/peter/haus/frontend/src/App.jsx): Main container component, layout, and state orchestration.
+    - [theme.js](file:///home/peter/haus/frontend/src/theme.js): Global Material UI theme customization.
+    - [components/](file:///home/peter/haus/frontend/src/components/): Reusable UI pieces.
+        - [MapComponent.jsx](file:///home/peter/haus/frontend/src/components/MapComponent.jsx): Leaflet map logic, markers, and Geoman drawing.
+        - [FilterModal.jsx](file:///home/peter/haus/frontend/src/components/FilterModal.jsx): Sidebar/modal for setting search parameters.
+        - [ComparisonModal.jsx](file:///home/peter/haus/frontend/src/components/ComparisonModal.jsx): Interface for pairwise property ranking.
+        - [ListingDetailModal.jsx](file:///home/peter/haus/frontend/src/components/ListingDetailModal.jsx): Detailed view for individual properties.
+    - [utils/](file:///home/peter/haus/frontend/src/utils/): Helper functions.
+        - [storage.js](file:///home/peter/haus/frontend/src/utils/storage.js): Local storage persistence for session data.
+
+### Scraper (`/scraper`)
+- [Dockerfile](file:///home/peter/haus/scraper/Dockerfile): Container definition for the Python scraper service.
+- [requirements.txt](file:///home/peter/haus/scraper/requirements.txt): Scraper-specific dependencies (`homeharvest`, `geoalchemy2`).
+- [main.py](file:///home/peter/haus/scraper/main.py): Core data scraping logic (portal ingestion and normalization).
+- [scheduler.py](file:///home/peter/haus/scraper/scheduler.py): Logic for periodic task execution and initial DB checks.
+
 > [!TIP]
 > **Technical Implementation**: For detailed database schemas, ELO algorithms, and component specs, see:
 > *   [Backend Technical & API Specs](backend.md#table-rankings_rankingscore)
