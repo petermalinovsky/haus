@@ -10,5 +10,6 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    allowedHosts: ['haus.malinovsky.xyz', 'localhost'],
   },
 })

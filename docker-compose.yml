@@ -15,6 +15,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - haus_network
 
   backend:
     build: 
@@ -32,6 +34,8 @@ services:
     environment:
       DATABASE_URL: postgis://haus_user:haus_password@db:5432/haus
       DEBUG: "True"
+    networks:
+      - haus_network
 
   frontend:
     build:
@@ -48,6 +52,8 @@ services:
       NODE_ENV: development
     stdin_open: true
     tty: true
+    networks:
+      - haus_network
 
   scraper:
     build:
@@ -64,7 +70,13 @@ services:
       # Semicolon-separated list of locations to scrape
       # Example: "Boston, MA; Cambridge, MA; Somerville, MA"
       SCRAPE_LOCATIONS: "Boston, MA; Cambridge, MA"
+    networks:
+      - haus_network
 
 
 volumes:
   postgres_data:
+
+
+networks:
+  haus_network:
