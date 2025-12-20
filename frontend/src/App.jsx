@@ -6,6 +6,7 @@ import ComparisonModal from './components/ComparisonModal';
 import CardSettingsModal from './components/CardSettingsModal';
 import ListingDetailModal from './components/ListingDetailModal';
 import FilterModal from './components/FilterModal';
+import { storage } from './utils/storage';
 
 import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Select, MenuItem, IconButton, Badge } from '@mui/material';
 import { ArrowUpward, ArrowDownward, Settings, CompareArrows, FilterList } from '@mui/icons-material';
@@ -17,7 +18,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isRankingOpen, setIsRankingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [visibleAttributes, setVisibleAttributes] = useState({
+  const [visibleAttributes, setVisibleAttributes] = useState(storage.load('visible_attributes', {
     price: true,
     address: true,
     beds: true,
@@ -25,7 +26,7 @@ function App() {
     sqft: true,
     price_per_sqft: false,
     hoa_fee: false
-  });
+  }));
 
 
 
@@ -33,11 +34,11 @@ function App() {
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [filters, setFilters] = useState({});
-  const [polygonWkt, setPolygonWkt] = useState(null);
+  const [filters, setFilters] = useState(storage.load('filters', {}));
+  const [polygonWkt, setPolygonWkt] = useState(storage.load('polygon_wkt', null));
 
-  const [sortBy, setSortBy] = useState('list_price');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortBy, setSortBy] = useState(storage.load('sort_by', 'list_price'));
+  const [sortOrder, setSortOrder] = useState(storage.load('sort_order', 'asc'));
 
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
@@ -83,6 +84,27 @@ function App() {
       [key]: !prev[key]
     }));
   };
+
+  // Persistence Effects
+  useEffect(() => {
+    storage.save('visible_attributes', visibleAttributes);
+  }, [visibleAttributes]);
+
+  useEffect(() => {
+    storage.save('filters', filters);
+  }, [filters]);
+
+  useEffect(() => {
+    storage.save('polygon_wkt', polygonWkt);
+  }, [polygonWkt]);
+
+  useEffect(() => {
+    storage.save('sort_by', sortBy);
+  }, [sortBy]);
+
+  useEffect(() => {
+    storage.save('sort_order', sortOrder);
+  }, [sortOrder]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -187,6 +209,7 @@ function App() {
               heatmapData={heatmapData}
               hoveredListingId={hoveredListingId}
               onPolygonChange={setPolygonWkt}
+              polygonWkt={polygonWkt}
             />
           </Box>
 
