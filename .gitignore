@@ -28,6 +28,7 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+venv/
 *.pyc
 *.pyo
 *.pyd

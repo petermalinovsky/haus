@@ -29,8 +29,8 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
         try {
             // Parallel fetch: Listing Details + History
             const [resListing, resHistory] = await Promise.all([
-                axios.get(`http://localhost:8000/api/listings/${listingId}/`),
-                axios.get(`http://localhost:8000/api/listings/${listingId}/history/`)
+                axios.get(`/api/listings/${listingId}/`),
+                axios.get(`/api/listings/${listingId}/history/`)
             ]);
 
             setListing(resListing.data);

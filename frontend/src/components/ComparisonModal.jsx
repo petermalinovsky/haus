@@ -10,7 +10,7 @@ const ComparisonModal = ({ isOpen, onClose, userId = 'default_user' }) => {
     const fetchPair = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:8000/api/feedback/pair/');
+            const res = await axios.get('/api/feedback/pair/');
             setPair(res.data);
         } catch (error) {
             console.error("Error fetching pair:", error);
@@ -28,7 +28,7 @@ const ComparisonModal = ({ isOpen, onClose, userId = 'default_user' }) => {
     const handleVote = async (winnerId, loserId) => {
         setLoading(true); // Show loading while fetching next
         try {
-            await axios.post('http://localhost:8000/api/feedback/', {
+            await axios.post('/api/feedback/', {
                 user_id: userId,
                 winner_listing_id: winnerId,
                 loser_listing_id: loserId

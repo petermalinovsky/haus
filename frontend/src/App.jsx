@@ -94,12 +94,12 @@ function App() {
         }
 
         // Fetch listings (Paginated, Page 1)
-        const resListings = await axios.get('http://localhost:8000/api/listings/', { params });
+        const resListings = await axios.get('/api/listings/', { params });
         setListings(resListings.data.results);
 
         // Fetch Heatmap Data (All items, simplified)
         // We also apply filters to heatmap for consistency
-        const resMetrics = await axios.get('http://localhost:8000/api/listings/metrics/', { params });
+        const resMetrics = await axios.get('/api/listings/metrics/', { params });
         const data = resMetrics.data
           .filter(l => l.latitude && l.longitude)
           .map(l => ({
