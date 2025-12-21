@@ -1,10 +1,10 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import RankingScore, RankingComparison
+from .models import RankingScore, RankingComparison, FeatureWeight, NeighborhoodWeight, LearnedPreference
 from listings.models import MlsHistory
 from listings.serializers import ListingSerializer
-from .elo import EloRatingSystem
+from .feature_ranker import FeatureRanker
 from django.db import transaction
 import random
 
@@ -12,9 +12,8 @@ import random
 def get_comparison_pair(request):
     """
     GET /api/comparisons/pair/
-    Return two distinct, active listings for comparison.
     """
-    listings = list(MlsHistory.objects.all()[:100]) # Get a subset for initial random pool
+    listings = list(MlsHistory.objects.all()[:100])
     if len(listings) < 2:
         return Response({"error": "Not enough listings"}, status=status.HTTP_400_BAD_VALUE)
     
@@ -30,7 +29,6 @@ def get_comparison_pair(request):
 def submit_comparison(request):
     """
     POST /api/comparisons/
-    Fields: listing_a_id, listing_b_id, winner (A, B, TIE)
     """
     listing_a_id = request.data.get('listing_a_id')
     listing_b_id = request.data.get('listing_b_id')
@@ -53,22 +51,9 @@ def submit_comparison(request):
             winner=winner
         )
 
-        # Get current scores
-        score_a_obj, _ = RankingScore.objects.get_or_create(listing=listing_a)
-        score_b_obj, _ = RankingScore.objects.get_or_create(listing=listing_b)
-
-        # Calculate new ratings
-        new_a, new_b = EloRatingSystem.calculate_new_ratings(
-            score_a_obj.score,
-            score_b_obj.score,
-            winner
-        )
-
-        # Update scores
-        score_a_obj.score = new_a
-        score_a_obj.save()
-        score_b_obj.score = new_b
-        score_b_obj.save()
+        # Update weights and recompute scores
+        FeatureRanker.update_weights(listing_a, listing_b, winner)
+        FeatureRanker.recompute_all_scores()
 
     return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
@@ -76,14 +61,11 @@ def submit_comparison(request):
 def get_ranking_distribution(request):
     """
     GET /api/rankings/distribution/
-    Return histogram of current scores.
     """
     scores = list(RankingScore.objects.values_list('score', flat=True))
     if not scores:
         return Response({"bins": [], "counts": []})
     
-    # Simple bucketization if numpy is not preferred or to avoid dependency issues
-    # but I'll use simple python logic for robustness
     min_score = min(scores)
     max_score = max(scores)
     
@@ -107,4 +89,20 @@ def get_ranking_distribution(request):
     return Response({
         "bins": bins,
         "counts": counts
+    })
+
+@api_view(['GET'])
+def get_feature_insights(request):
+    """
+    GET /api/rankings/insights/
+    Returns current weights and learned preferences.
+    """
+    weights = FeatureWeight.objects.all().values('feature_name', 'weight')
+    neighborhoods = NeighborhoodWeight.objects.all().order_by('-weight')[:5].values('neighborhood_name', 'weight')
+    preferences = LearnedPreference.objects.all().values('key', 'value')
+
+    return Response({
+        "weights": list(weights),
+        "top_neighborhoods": list(neighborhoods),
+        "preferences": list(preferences)
     })
