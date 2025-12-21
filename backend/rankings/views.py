@@ -34,7 +34,7 @@ def submit_comparison(request):
     listing_b_id = request.data.get('listing_b_id')
     winner = request.data.get('winner')
 
-    if winner not in ['A', 'B', 'TIE']:
+    if winner not in ['A', 'B', 'TIE', 'NEITHER']:
         return Response({"error": "Invalid winner choice"}, status=status.HTTP_400_BAD_VALUE)
 
     try:
@@ -90,6 +90,22 @@ def get_ranking_distribution(request):
         "bins": bins,
         "counts": counts
     })
+
+@api_view(['GET'])
+def get_random_listing(request):
+    """
+    GET /api/comparisons/random/
+    Returns a single random listing.
+    """
+    exclude_ids = request.query_params.getlist('exclude') + request.query_params.getlist('exclude[]')
+    queryset = MlsHistory.objects.exclude(id__in=exclude_ids)
+    
+    if not queryset.exists():
+        return Response({"error": "No listings available"}, status=status.HTTP_404_NOT_FOUND)
+    
+    listing = random.choice(list(queryset[:100]))
+    serializer = ListingSerializer(listing)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def get_feature_insights(request):

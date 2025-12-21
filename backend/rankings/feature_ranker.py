@@ -110,6 +110,10 @@ class FeatureRanker:
                 if features_b['list_price'] > cap_obj.value:
                     cap_obj.value = features_b['list_price']
                     cap_obj.save()
+        elif winner == 'NEITHER':
+            target_diff = 0.0
+            # For NEITHER, we don't update favorites or budget cap.
+            # We just treat it as a neutral tie.
         else:
             target_diff = 0.0
 

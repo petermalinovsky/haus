@@ -40,10 +40,11 @@ class RankingComparison(models.Model):
         ('A', 'Listing A'),
         ('B', 'Listing B'),
         ('TIE', 'Tie'),
+        ('NEITHER', 'Neither'),
     ]
     listing_a = models.ForeignKey(MlsHistory, on_delete=models.CASCADE, related_name='comparisons_as_a')
     listing_b = models.ForeignKey(MlsHistory, on_delete=models.CASCADE, related_name='comparisons_as_b')
-    winner = models.CharField(max_length=3, choices=CHOICES)
+    winner = models.CharField(max_length=7, choices=CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -35,12 +35,30 @@ const ComparisonModal = ({ isOpen, onClose, onVote }) => {
                 listing_b_id: pair.b.id,
                 winner: winner
             });
-            // Notify parent to refresh listings if needed
-            if (onVote) {
-                onVote();
+
+            if (winner === 'NEITHER') {
+                // Keep one randomly, replace the other
+                const keepA = Math.random() > 0.5;
+                const keepListing = keepA ? pair.a : pair.b;
+                const excludeIds = [pair.a.id, pair.b.id];
+
+                const res = await axios.get('/api/comparisons/random/', {
+                    params: { exclude: excludeIds }
+                });
+
+                setPair({
+                    a: keepA ? keepListing : res.data,
+                    b: keepA ? res.data : keepListing
+                });
+                setLoading(false);
+            } else {
+                // Notify parent to refresh listings if needed
+                if (onVote) {
+                    onVote();
+                }
+                // Fetch next pair
+                fetchPair();
             }
-            // Fetch next pair
-            fetchPair();
         } catch (error) {
             console.error("Error submitting vote:", error);
             setLoading(false);
@@ -126,9 +144,17 @@ const ComparisonModal = ({ isOpen, onClose, onVote }) => {
                                     <Button
                                         variant="outlined"
                                         onClick={() => handleVote('TIE')}
-                                        sx={{ minWidth: 80 }}
+                                        sx={{ minWidth: 100 }}
                                     >
                                         Tie
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        onClick={() => handleVote('NEITHER')}
+                                        sx={{ minWidth: 100 }}
+                                    >
+                                        Neither
                                     </Button>
                                 </Box>
 
