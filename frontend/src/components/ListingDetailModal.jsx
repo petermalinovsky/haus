@@ -98,16 +98,16 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                         <Box sx={{ p: 3 }} role="tabpanel" hidden={tabValue !== 0}>
                             {tabValue === 0 && (
                                 <Grid container spacing={3}>
-                                    <Grid item xs={12} md={8}>
+                                    <Grid size={{ xs: 12, md: 8 }}>
                                         <Typography variant="h4" color="primary" gutterBottom sx={{ fontWeight: 700 }}>
                                             ${Number(listing.list_price).toLocaleString()}
                                         </Typography>
 
                                         <Grid container spacing={2} sx={{ mb: 3 }}>
-                                            <Grid item><Chip label={`${listing.beds} Beds`} variant="outlined" /></Grid>
-                                            <Grid item><Chip label={`${listing.full_baths} Baths`} variant="outlined" /></Grid>
-                                            <Grid item><Chip label={`${listing.sqft} Sqft`} variant="outlined" /></Grid>
-                                            <Grid item><Chip label={`$${Math.round(listing.list_price / listing.sqft)}/sqft`} variant="outlined" /></Grid>
+                                            <Grid size="auto"><Chip label={`${listing.beds} Beds`} variant="outlined" /></Grid>
+                                            <Grid size="auto"><Chip label={`${listing.full_baths} Baths`} variant="outlined" /></Grid>
+                                            <Grid size="auto"><Chip label={`${listing.sqft} Sqft`} variant="outlined" /></Grid>
+                                            <Grid size="auto"><Chip label={`$${Math.round(listing.list_price / listing.sqft)}/sqft`} variant="outlined" /></Grid>
                                         </Grid>
 
                                         <Typography variant="body1" paragraph>
@@ -115,7 +115,7 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                                         </Typography>
                                     </Grid>
 
-                                    <Grid item xs={12} md={4}>
+                                    <Grid size={{ xs: 12, md: 4 }}>
                                         <Paper variant="outlined" sx={{ p: 2 }}>
                                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Property Details</Typography>
                                             <Divider sx={{ mb: 2 }} />

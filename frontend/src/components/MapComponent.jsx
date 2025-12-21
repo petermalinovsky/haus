@@ -38,6 +38,16 @@ const useMapPlugins = () => {
                 // Ensure L is available globally for plugins that expect it
                 window.L = L;
 
+                // Silence Canvas2D "willReadFrequently" warning for Leaflet.heat
+                const originalGetContext = HTMLCanvasElement.prototype.getContext;
+                HTMLCanvasElement.prototype.getContext = function (type, attributes) {
+                    if (type === '2d') {
+                        attributes = attributes || {};
+                        attributes.willReadFrequently = true;
+                    }
+                    return originalGetContext.call(this, type, attributes);
+                };
+
                 try {
                     await import('@geoman-io/leaflet-geoman-free');
                     await import('leaflet.heat');
@@ -313,7 +323,7 @@ const MapComponent = ({
             {showControls && <GeomanControl onPolygonChange={onPolygonChange} polygonWkt={polygonWkt} />}
             {autoFitBounds && <BoundsHandler />}
 
-            {listings.map(listing => (
+            {listings.filter(l => l.latitude && l.longitude).map(listing => (
                 <Marker
                     key={listing.id}
                     position={[listing.latitude, listing.longitude]}

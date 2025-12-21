@@ -71,9 +71,21 @@ const ComparisonModal = ({ isOpen, onClose, onVote }) => {
                         <Typography variant="body2">{listing.full_baths} Baths</Typography>
                         <Typography variant="body2">{listing.sqft} Sqft</Typography>
                     </Stack>
-                    <Button variant="contained" fullWidth sx={{ mt: 2 }} disableElevation>
+                    <Box
+                        sx={{
+                            mt: 2,
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            textAlign: 'center',
+                            py: 1,
+                            borderRadius: 1,
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            textTransform: 'uppercase'
+                        }}
+                    >
                         Prefer This
-                    </Button>
+                    </Box>
                 </CardContent>
             </CardActionArea>
         </Card>
