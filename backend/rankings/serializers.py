@@ -1,17 +1,12 @@
 from rest_framework import serializers
-from .models import UserComparisonFeedback, UserPreferenceConfig, UserRankingScore
+from .models import RankingScore, RankingComparison
 
-class UserComparisonFeedbackSerializer(serializers.ModelSerializer):
+class RankingScoreSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserComparisonFeedback
+        model = RankingScore
         fields = '__all__'
 
-class UserPreferenceConfigSerializer(serializers.ModelSerializer):
+class RankingComparisonSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserPreferenceConfig
-        fields = '__all__'
-
-class UserRankingScoreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserRankingScore
+        model = RankingComparison
         fields = '__all__'

@@ -5,11 +5,12 @@ import ListingCardStack from './components/ListingCardStack';
 import ComparisonModal from './components/ComparisonModal';
 import CardSettingsModal from './components/CardSettingsModal';
 import ListingDetailModal from './components/ListingDetailModal';
+import RankingDashboard from './components/RankingDashboard';
 import FilterModal from './components/FilterModal';
 import { storage } from './utils/storage';
 
-import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Select, MenuItem, IconButton, Badge } from '@mui/material';
-import { ArrowUpward, ArrowDownward, Settings, CompareArrows, FilterList } from '@mui/icons-material';
+import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Select, MenuItem, IconButton, Badge, Tooltip } from '@mui/material';
+import { ArrowUpward, ArrowDownward, Settings, CompareArrows, FilterList, BarChart } from '@mui/icons-material';
 import theme from './theme';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [heatmapData, setHeatmapData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRankingOpen, setIsRankingOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [visibleAttributes, setVisibleAttributes] = useState(storage.load('visible_attributes', {
     price: true,
@@ -49,6 +51,11 @@ function App() {
   };
 
   const getSortedListings = () => {
+    // If we have ranking sorting, it's already sorted by the backend
+    if (sortBy === 'ranking_score' || sortBy === 'worst_match') {
+      return listings;
+    }
+
     const sorted = [...listings].sort((a, b) => {
       let valA = a[sortBy];
       let valB = b[sortBy];
@@ -58,9 +65,6 @@ function App() {
         valA = a.list_price && a.sqft ? Number(a.list_price) / Number(a.sqft) : 0;
         valB = b.list_price && b.sqft ? Number(b.list_price) / Number(b.sqft) : 0;
       } else {
-        // Ensure numeric comparison for standard fields (mostly numbers)
-        // If they are strings, this parses them. If text (like address), it becomes NaN but we don't sort by address often.
-        // Actually address is text. We should check field type.
         if (['list_price', 'beds', 'full_baths', 'sqft', 'hoa_fee'].includes(sortBy)) {
           valA = Number(valA);
           valB = Number(valB);
@@ -106,6 +110,9 @@ function App() {
     storage.save('sort_order', sortOrder);
   }, [sortOrder]);
 
+  const [triggerFetch, setTriggerFetch] = useState(0);
+  const refreshListings = () => setTriggerFetch(prev => prev + 1);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -113,6 +120,13 @@ function App() {
         const params = { ...filters };
         if (polygonWkt) {
           params.polygon = polygonWkt;
+        }
+
+        // Add sorting params
+        if (sortBy === 'ranking_score') {
+          params.sort = '-ranking_score';
+        } else if (sortBy === 'worst_match') {
+          params.sort = 'ranking_score';
         }
 
         // Fetch listings (Paginated, Page 1)
@@ -139,7 +153,7 @@ function App() {
     };
 
     fetchData();
-  }, [filters, polygonWkt]);
+  }, [filters, polygonWkt, sortBy, sortOrder, triggerFetch]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -159,6 +173,8 @@ function App() {
                   size="small"
                   sx={{ height: 40, minWidth: 120 }}
                 >
+                  <MenuItem value="ranking_score">Best Match</MenuItem>
+                  <MenuItem value="worst_match">Worst Match</MenuItem>
                   <MenuItem value="list_price">Price</MenuItem>
                   <MenuItem value="beds">Beds</MenuItem>
                   <MenuItem value="full_baths">Baths</MenuItem>
@@ -170,6 +186,15 @@ function App() {
                 <IconButton onClick={toggleSortOrder} color="primary" sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
                   {sortOrder === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
                 </IconButton>
+
+                <Tooltip title="Ranking Insights">
+                  <IconButton
+                    onClick={() => setIsDashboardOpen(true)}
+                    sx={{ border: 1, borderColor: 'divider', borderRadius: 1, color: 'text.secondary' }}
+                  >
+                    <BarChart fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
 
               <Button
@@ -221,7 +246,15 @@ function App() {
           />
         </Box>
 
-        <ComparisonModal isOpen={isRankingOpen} onClose={() => setIsRankingOpen(false)} />
+        <ComparisonModal
+          isOpen={isRankingOpen}
+          onClose={() => setIsRankingOpen(false)}
+          onVote={refreshListings}
+        />
+        <RankingDashboard
+          isOpen={isDashboardOpen}
+          onClose={() => setIsDashboardOpen(false)}
+        />
         <CardSettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Typography } from '@mui/material';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -236,14 +237,71 @@ const GeomanControl = ({ onPolygonChange, polygonWkt }) => {
 };
 
 
-const MapComponent = ({ listings, heatmapData, hoveredListingId, onPolygonChange, polygonWkt }) => {
+const MapComponent = ({
+    listings = [],
+    heatmapData = [],
+    hoveredListingId,
+    onPolygonChange,
+    polygonWkt,
+    showControls = true,
+    showHeatmap = true,
+    autoFitBounds = false
+}) => {
     // Default center (Boston)
     const position = [42.3601, -71.0589];
     const pluginsLoaded = useMapPlugins();
 
+    // Internal component to handle bounds fitting
+    const BoundsHandler = () => {
+        const map = useMap();
+        useEffect(() => {
+            const validListings = listings.filter(l => l.latitude && l.longitude);
+            if (autoFitBounds && validListings.length > 0) {
+                const bounds = L.latLngBounds(validListings.map(l => [l.latitude, l.longitude]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }, [map, listings, autoFitBounds]);
+        return null;
+    };
+
     if (!pluginsLoaded) {
         return <div style={{ height: "100%", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f0f0f0" }}>Loading Map...</div>;
     }
+
+    // Calculate percentiles
+    const sortedScores = [...listings].map(l => l.ranking_score || 1000).sort((a, b) => a - b);
+    const getPercentile = (score) => {
+        if (sortedScores.length === 0) return 50;
+        const index = sortedScores.indexOf(score);
+        return (index / sortedScores.length) * 100;
+    };
+
+    const getMarkerIcon = (score, isHovered) => {
+        const percentile = getPercentile(score);
+        let color = '#757575'; // default grey
+        if (percentile >= 80) color = '#2e7d32'; // dark green (Best)
+        else if (percentile >= 60) color = '#4caf50'; // green
+        else if (percentile >= 40) color = '#ffeb3b'; // yellow
+        else if (percentile >= 20) color = '#ff9800'; // orange
+        else color = '#f44336'; // red (Worst)
+
+        const size = isHovered ? 24 : 14;
+
+        return L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="
+                background-color: ${color};
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 0 4px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+            popupAnchor: [0, -size / 2]
+        });
+    };
 
     return (
         <MapContainer center={position} zoom={13} style={{ height: "100%", width: "100%" }}>
@@ -252,26 +310,32 @@ const MapComponent = ({ listings, heatmapData, hoveredListingId, onPolygonChange
                 url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             />
 
-            <GeomanControl onPolygonChange={onPolygonChange} polygonWkt={polygonWkt} />
+            {showControls && <GeomanControl onPolygonChange={onPolygonChange} polygonWkt={polygonWkt} />}
+            {autoFitBounds && <BoundsHandler />}
 
             {listings.map(listing => (
                 <Marker
                     key={listing.id}
                     position={[listing.latitude, listing.longitude]}
-                    icon={hoveredListingId === listing.id ? HighlightIcon : DefaultIcon}
+                    icon={getMarkerIcon(listing.ranking_score || 1000, hoveredListingId === listing.id)}
                     zIndexOffset={hoveredListingId === listing.id ? 1000 : 0}
                 >
                     <Popup>
                         <div style={{ minWidth: '200px' }}>
                             <img src={listing.primary_photo} style={{ width: '100%', borderRadius: '8px', marginBottom: '8px' }} alt="Home" />
-                            <strong>{listing.formatted_address}</strong><br />
-                            ${Number(listing.list_price).toLocaleString()}
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{listing.formatted_address}</Typography>
+                            <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                ${Number(listing.list_price).toLocaleString()}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Rank: {Math.round(getPercentile(listing.ranking_score || 1000))}% tile
+                            </Typography>
                         </div>
                     </Popup>
                 </Marker>
             ))}
 
-            <HeatmapLayer data={heatmapData} />
+            {showHeatmap && <HeatmapLayer data={heatmapData} />}
         </MapContainer>
     );
 };

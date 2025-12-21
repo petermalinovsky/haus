@@ -48,11 +48,10 @@ class ListingsViewSet(viewsets.ReadOnlyModelViewSet):
         direction = self.request.query_params.get('direction', 'asc')
         
         if custom_sort:
-            # Simple parser: field1/field2
+            # ... existing custom sort logic ...
             try:
                 if '/' in custom_sort:
                     num_field, denom_field = custom_sort.split('/')
-                    # Verify fields exist on model to prevent injection/errors
                     valid_fields = [f.name for f in CurrentListing._meta.get_fields()]
                     if num_field in valid_fields and denom_field in valid_fields:
                         expression = ExpressionWrapper(
@@ -66,6 +65,26 @@ class ListingsViewSet(viewsets.ReadOnlyModelViewSet):
                 logger.error(f"Error parsing custom sort: {e}")
                 pass
         
+        # Ranking Sorting
+        sort = self.request.query_params.get('sort', None)
+        if sort in ['ranking_score', '-ranking_score']:
+            from rankings.models import RankingScore
+            from django.db.models import OuterRef, Subquery
+            
+            # Subquery to get the score
+            score_subquery = RankingScore.objects.filter(listing_id=OuterRef('pk')).values('score')[:1]
+            qs = qs.annotate(annotated_ranking_score=Subquery(score_subquery))
+            
+            # Use Coalesce to handle listings without a score, defaulting to 1000.0
+            from django.db.models.functions import Coalesce
+            from django.db.models import Value
+            qs = qs.annotate(
+                final_ranking_score=Coalesce(F('annotated_ranking_score'), Value(1000.0))
+            )
+            
+            order_by = 'final_ranking_score' if sort == 'ranking_score' else '-final_ranking_score'
+            qs = qs.order_by(order_by)
+
         return qs
 
     @action(detail=False, methods=['get'])
