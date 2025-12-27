@@ -4,17 +4,23 @@ import { Dialog, DialogTitle, DialogContent, Box, Card, CardActionArea, CardMedi
 import { Close } from '@mui/icons-material';
 import MapComponent from './MapComponent';
 
-const ComparisonModal = ({ isOpen, onClose, onVote }) => {
+const ComparisonModal = ({ isOpen, onClose, onVote, candidateIds }) => {
     const [pair, setPair] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const fetchPair = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/comparisons/pair/');
+            let res;
+            if (candidateIds && candidateIds.length > 0) {
+                res = await axios.post('/api/comparisons/subset-pair/', { candidate_ids: candidateIds });
+            } else {
+                res = await axios.get('/api/comparisons/pair/');
+            }
             setPair(res.data);
         } catch (error) {
             console.error("Error fetching pair:", error);
+            // If error (e.g. not enough candidates), maybe close or show message?
         } finally {
             setLoading(false);
         }
@@ -24,7 +30,7 @@ const ComparisonModal = ({ isOpen, onClose, onVote }) => {
         if (isOpen) {
             fetchPair();
         }
-    }, [isOpen]);
+    }, [isOpen, candidateIds]);
 
     const handleVote = async (winner) => {
         if (!pair) return;
@@ -42,9 +48,12 @@ const ComparisonModal = ({ isOpen, onClose, onVote }) => {
                 const keepListing = keepA ? pair.a : pair.b;
                 const excludeIds = [pair.a.id, pair.b.id];
 
-                const res = await axios.get('/api/comparisons/random/', {
-                    params: { exclude: excludeIds }
-                });
+                const params = { exclude: excludeIds };
+                if (candidateIds && candidateIds.length > 0) {
+                    params.subset_ids = candidateIds;
+                }
+
+                const res = await axios.get('/api/comparisons/random/', { params });
 
                 setPair({
                     a: keepA ? keepListing : res.data,

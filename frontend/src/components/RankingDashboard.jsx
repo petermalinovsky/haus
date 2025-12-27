@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Dialog, DialogTitle, DialogContent, Box, Typography, IconButton, CircularProgress, Stack, Paper } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Dialog, DialogTitle, DialogContent, Box, Typography, IconButton, CircularProgress, Stack, Paper, Button } from '@mui/material';
+import { Close, RestartAlt } from '@mui/icons-material';
 
 const RankingDashboard = ({ isOpen, onClose }) => {
     const [data, setData] = useState(null);
@@ -28,6 +28,19 @@ const RankingDashboard = ({ isOpen, onClose }) => {
             fetchData();
         }
     }, [isOpen]);
+
+    const handleReset = async () => {
+        if (window.confirm("Are you sure you want to reset all rankings? This cannot be undone.")) {
+            try {
+                await axios.post('/api/rankings/reset/');
+                onClose();
+                window.location.reload();
+            } catch (error) {
+                console.error("Error resetting rankings:", error);
+                alert("Failed to reset rankings.");
+            }
+        }
+    };
 
     const renderHistogram = () => {
         if (!data || !data.bins || data.bins.length === 0) return <Typography>No ranking data yet.</Typography>;
@@ -146,6 +159,18 @@ const RankingDashboard = ({ isOpen, onClose }) => {
                                 </Box>
                             </Stack>
                         </Paper>
+
+                        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<RestartAlt />}
+                                onClick={handleReset}
+                                size="small"
+                            >
+                                Reset All Rankings
+                            </Button>
+                        </Box>
                     </Box>
                 )}
             </DialogContent>

@@ -3,12 +3,12 @@ import axios from 'axios';
 import MapComponent from './components/MapComponent';
 import ListingCardStack from './components/ListingCardStack';
 import ComparisonModal from './components/ComparisonModal';
+import CandidateList from './components/CandidateList';
 import CardSettingsModal from './components/CardSettingsModal';
 import ListingDetailModal from './components/ListingDetailModal';
 import RankingDashboard from './components/RankingDashboard';
 import FilterModal from './components/FilterModal';
 import { storage } from './utils/storage';
-
 import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Select, MenuItem, IconButton, Badge, Tooltip } from '@mui/material';
 import { ArrowUpward, ArrowDownward, Settings, CompareArrows, FilterList, BarChart } from '@mui/icons-material';
 import theme from './theme';
@@ -20,6 +20,11 @@ function App() {
   const [isRankingOpen, setIsRankingOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Phase 1 & 2 State
+  const [candidates, setCandidates] = useState([]);
+  const [isCandidateListOpen, setIsCandidateListOpen] = useState(false);
+  const [rankingSubsetIds, setRankingSubsetIds] = useState(null); // null = global, array = subset
   const [visibleAttributes, setVisibleAttributes] = useState(storage.load('visible_attributes', {
     price: true,
     address: true,
@@ -155,6 +160,32 @@ function App() {
     fetchData();
   }, [filters, polygonWkt, sortBy, sortOrder, triggerFetch]);
 
+  const handleFindSimilar = async (seedId) => {
+    try {
+      setLoading(true);
+      const res = await axios.post('/api/candidates/', { seed_id: seedId });
+      setCandidates(res.data);
+      setIsCandidateListOpen(true);
+      // Close detail modal if open (managed by selectedListingId)
+      setSelectedListingId(null);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error finding candidates:", error);
+      setLoading(false);
+    }
+  };
+
+  const startGlobalRanking = () => {
+    setRankingSubsetIds(null);
+    setIsRankingOpen(true);
+  };
+
+  const startSubsetRanking = () => {
+    setRankingSubsetIds(candidates.map(c => c.id));
+    setIsCandidateListOpen(false);
+    setIsRankingOpen(true);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -218,7 +249,7 @@ function App() {
               <Button
                 variant="contained"
                 startIcon={<CompareArrows />}
-                onClick={() => setIsRankingOpen(true)}
+                onClick={startGlobalRanking}
                 disableElevation
               >
                 Rankings
@@ -250,6 +281,13 @@ function App() {
           isOpen={isRankingOpen}
           onClose={() => setIsRankingOpen(false)}
           onVote={refreshListings}
+          candidateIds={rankingSubsetIds}
+        />
+        <CandidateList
+          isOpen={isCandidateListOpen}
+          onClose={() => setIsCandidateListOpen(false)}
+          candidates={candidates}
+          onStartRanking={startSubsetRanking}
         />
         <RankingDashboard
           isOpen={isDashboardOpen}
@@ -265,6 +303,7 @@ function App() {
           isOpen={!!selectedListingId}
           listingId={selectedListingId}
           onClose={() => setSelectedListingId(null)}
+          onFindSimilar={handleFindSimilar}
         />
         <FilterModal
           isOpen={isFilterOpen}

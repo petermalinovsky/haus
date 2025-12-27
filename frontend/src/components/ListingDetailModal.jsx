@@ -3,13 +3,27 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     Dialog, DialogTitle, DialogContent,
-    Typography, Box, IconButton, Grid, Chip,
+    Typography, Box, IconButton, Chip, Button,
     Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper,
     Tabs, Tab, CircularProgress, Divider
 } from '@mui/material';
 import { Close, House, AttachMoney, History } from '@mui/icons-material';
 
-const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
+// Safe formatter
+const safeNumber = (val) => {
+    const num = Number(val);
+    return isNaN(num) ? 0 : num;
+};
+
+const safePriceSqft = (price, sqft) => {
+    const p = Number(price);
+    const s = Number(sqft);
+    if (!p || !s) return 0;
+    return Math.round(p / s);
+};
+
+
+const ListingDetailModal = ({ listingId, isOpen, onClose, onFindSimilar }) => {
     const [listing, setListing] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -67,7 +81,18 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                         </Typography>
                     )}
                 </Box>
-                <IconButton onClick={onClose}><Close /></IconButton>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    {onFindSimilar && listing && (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => onFindSimilar(listing.id)}
+                        >
+                            Find Similar
+                        </Button>
+                    )}
+                    <IconButton onClick={onClose}><Close /></IconButton>
+                </Box>
             </DialogTitle>
 
             <DialogContent dividers sx={{ p: 0 }}>
@@ -97,25 +122,25 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                         {/* Overview Tab */}
                         <Box sx={{ p: 3 }} role="tabpanel" hidden={tabValue !== 0}>
                             {tabValue === 0 && (
-                                <Grid container spacing={3}>
-                                    <Grid size={{ xs: 12, md: 8 }}>
+                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+                                    <Box sx={{ flex: 2 }}>
                                         <Typography variant="h4" color="primary" gutterBottom sx={{ fontWeight: 700 }}>
-                                            ${Number(listing.list_price).toLocaleString()}
+                                            ${safeNumber(listing.list_price).toLocaleString()}
                                         </Typography>
 
-                                        <Grid container spacing={2} sx={{ mb: 3 }}>
-                                            <Grid size="auto"><Chip label={`${listing.beds} Beds`} variant="outlined" /></Grid>
-                                            <Grid size="auto"><Chip label={`${listing.full_baths} Baths`} variant="outlined" /></Grid>
-                                            <Grid size="auto"><Chip label={`${listing.sqft} Sqft`} variant="outlined" /></Grid>
-                                            <Grid size="auto"><Chip label={`$${Math.round(listing.list_price / listing.sqft)}/sqft`} variant="outlined" /></Grid>
-                                        </Grid>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                                            <Chip label={`${listing.beds || 0} Beds`} variant="outlined" />
+                                            <Chip label={`${listing.full_baths || 0} Baths`} variant="outlined" />
+                                            <Chip label={`${listing.sqft || 0} Sqft`} variant="outlined" />
+                                            <Chip label={`$${safePriceSqft(listing.list_price, listing.sqft)}/sqft`} variant="outlined" />
+                                        </Box>
 
                                         <Typography variant="body1" paragraph>
                                             {listing.text || "No description available."}
                                         </Typography>
-                                    </Grid>
+                                    </Box>
 
-                                    <Grid size={{ xs: 12, md: 4 }}>
+                                    <Box sx={{ flex: 1 }}>
                                         <Paper variant="outlined" sx={{ p: 2 }}>
                                             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Property Details</Typography>
                                             <Divider sx={{ mb: 2 }} />
@@ -130,14 +155,14 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                                                 <Typography variant="body2">{listing.year_built}</Typography>
 
                                                 <Typography variant="body2" color="text.secondary">HOA</Typography>
-                                                <Typography variant="body2">${Number(listing.hoa_fee || 0).toLocaleString()}</Typography>
+                                                <Typography variant="body2">${safeNumber(listing.hoa_fee).toLocaleString()}</Typography>
 
                                                 <Typography variant="body2" color="text.secondary">Taxes</Typography>
-                                                <Typography variant="body2">${Number(listing.tax || 0).toLocaleString()}</Typography>
+                                                <Typography variant="body2">${safeNumber(listing.tax).toLocaleString()}</Typography>
                                             </Box>
                                         </Paper>
-                                    </Grid>
-                                </Grid>
+                                    </Box>
+                                </Box>
                             )}
                         </Box>
 
@@ -155,19 +180,21 @@ const ListingDetailModal = ({ listingId, isOpen, onClose }) => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {history.map((record, index) => (
+                                            {Array.isArray(history) && history.map((record, index) => (
                                                 <TableRow key={index} hover>
-                                                    <TableCell>{new Date(record.scrape_timestamp).toLocaleDateString()}</TableCell>
-                                                    <TableCell>{record.status}</TableCell>
+                                                    <TableCell>
+                                                        {record.scrape_timestamp ? new Date(record.scrape_timestamp).toLocaleDateString() : '-'}
+                                                    </TableCell>
+                                                    <TableCell>{record.status || '-'}</TableCell>
                                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                                                        ${Number(record.list_price).toLocaleString()}
+                                                        ${safeNumber(record.list_price).toLocaleString()}
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        ${Math.round(record.list_price / record.sqft).toLocaleString()}
+                                                        ${safePriceSqft(record.list_price, record.sqft).toLocaleString()}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
-                                            {history.length === 0 && (
+                                            {(!Array.isArray(history) || history.length === 0) && (
                                                 <TableRow>
                                                     <TableCell colSpan={4} align="center">No history records found.</TableCell>
                                                 </TableRow>
